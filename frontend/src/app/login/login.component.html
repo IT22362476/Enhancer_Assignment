@@ -1,0 +1,50 @@
+<div class="login-container">
+  <div class="login-card">
+    <div class="logo-section">
+      <img src="assets/enhanzer-logo.png" alt="Enhanzer Logo" class="logo"
+           onerror="this.style.display='none'" />
+      <h1>Enhanzer</h1>
+      <p class="subtitle">Full Stack Developer Assignment</p>
+    </div>
+    <form (ngSubmit)="onLogin()" #loginForm="ngForm">
+      <div class="form-group" [class.has-error]="emailInput.invalid && emailInput.touched">
+        <label for="email">Email</label>
+        <input
+          type="email"
+          id="email"
+          name="email"
+          [(ngModel)]="email"
+          placeholder="info@enhanzer.com"
+          required
+          email
+          #emailInput="ngModel"
+          class="form-control"
+        />
+        <div *ngIf="emailInput.invalid && emailInput.touched" class="field-error">
+          <span *ngIf="emailInput.errors?.['required']">Email is required.</span>
+          <span *ngIf="emailInput.errors?.['email']">Please enter a valid email.</span>
+        </div>
+      </div>
+      <div class="form-group" [class.has-error]="passwordInput.invalid && passwordInput.touched">
+        <label for="password">Password</label>
+        <input
+          type="password"
+          id="password"
+          name="password"
+          [(ngModel)]="password"
+          placeholder="Enter your password"
+          required
+          #passwordInput="ngModel"
+          class="form-control"
+        />
+        <div *ngIf="passwordInput.invalid && passwordInput.touched" class="field-error">
+          <span>Password is required.</span>
+        </div>
+      </div>
+      <div *ngIf="error" class="error-message">{{ error }}</div>
+      <button type="submit" class="btn-login" [disabled]="loading">
+        {{ loading ? 'Signing in...' : 'Sign In' }}
+      </button>
+    </form>
+  </div>
+</div>

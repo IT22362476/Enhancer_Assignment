@@ -1,0 +1,63 @@
+# .NET
+bin/
+obj/
+*.user
+*.suo
+*.sln.docstates
+*.csproj.user
+*.dbmdl
+*.jfm
+*.vs/
+packages/
+*.nupkg
+
+# Node
+node_modules/
+npm-debug.log
+yarn-error.log
+yarn-debug.log
+yarn.lock
+
+# Angular
+frontend/purchase-bill-app/dist/
+frontend/purchase-bill-app/tmp/
+frontend/purchase-bill-app/out-tsc/
+frontend/purchase-bill-app/.angular/cache/
+
+# Database
+*.db
+*.db-shm
+*.db-wal
+
+# Assignment PDF
+SE_V3E.pdf
+
+# OS files
+.DS_Store
+Thumbs.db
+Desktop.ini
+ehthumbs.db
+
+# IDE
+.idea/
+*.swp
+*.swo
+*~
+.vscode/settings.json
+.vscode/tasks.json
+.history/
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# SQL Server certificate (generated on first connection)
+*.cer
+
+# Logs
+*.log
+logs/
+
+# Docker
+docker-data/

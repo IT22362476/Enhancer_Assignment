@@ -1,0 +1,147 @@
+<div class="app-container">
+  <header class="app-header">
+    <h1>Purchase Bill</h1>
+    <div class="header-actions">
+      <span class="user-email">{{ userEmail }}</span>
+      <button class="btn-logout" (click)="logout()">Logout</button>
+    </div>
+  </header>
+
+  <div class="content">
+    <!-- Purchase Bill Form -->
+    <div class="form-card">
+      <h2>Add Purchase Item</h2>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Item</label>
+          <input
+            type="text"
+            [(ngModel)]="form.item"
+            (input)="filterItems()"
+            (focus)="filterItems()"
+            placeholder="Search item..."
+            class="form-control"
+            autocomplete="off"
+          />
+          <ul class="autocomplete-list" *ngIf="showAutocomplete && filteredItems.length > 0">
+            <li *ngFor="let item of filteredItems" (click)="selectItem(item)">
+              {{ item }}
+            </li>
+          </ul>
+        </div>
+        <div class="form-group">
+          <label>Batch</label>
+          <select [(ngModel)]="form.batch" class="form-control">
+            <option value="">Select Batch</option>
+            <option *ngFor="let loc of locations" [value]="loc.location_Name">
+              {{ loc.location_Name }}
+            </option>
+          </select>
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label>Standard Cost</label>
+          <input
+            type="number"
+            [(ngModel)]="form.standardCost"
+            (input)="calculate()"
+            placeholder="0"
+            class="form-control"
+          />
+        </div>
+        <div class="form-group">
+          <label>Standard Price</label>
+          <input
+            type="number"
+            [(ngModel)]="form.standardPrice"
+            (input)="calculate()"
+            placeholder="0"
+            class="form-control"
+          />
+        </div>
+        <div class="form-group">
+          <label>Quantity</label>
+          <input
+            type="number"
+            [(ngModel)]="form.quantity"
+            (input)="calculate()"
+            placeholder="0"
+            class="form-control"
+          />
+        </div>
+        <div class="form-group">
+          <label>Discount %</label>
+          <input
+            type="number"
+            [(ngModel)]="form.discount"
+            (input)="calculate()"
+            placeholder="0"
+            class="form-control"
+          />
+        </div>
+      </div>
+
+      <div class="calculated-row" *ngIf="calculated.totalCost > 0 || calculated.totalSelling > 0 || calculated.margin !== 0">
+        <div class="calc-item">
+          <span class="calc-label">Margin:</span>
+          <span class="calc-value margin-value">{{ calculated.margin | number:'1.2-2' }}</span>
+        </div>
+        <div class="calc-item">
+          <span class="calc-label">Total Cost:</span>
+          <span class="calc-value">{{ calculated.totalCost | number:'1.2-2' }}</span>
+        </div>
+        <div class="calc-item">
+          <span class="calc-label">Total Selling:</span>
+          <span class="calc-value">{{ calculated.totalSelling | number:'1.2-2' }}</span>
+        </div>
+      </div>
+
+      <button class="btn-add" (click)="addItem()" [disabled]="!isFormValid()">
+        + Add Item
+      </button>
+    </div>
+
+    <!-- Items Table -->
+    <div class="table-card" *ngIf="items.length > 0">
+      <h2>Purchase Items</h2>
+      <div class="summary-row">
+        <span><strong>Total Items:</strong> {{ items.length }}</span>
+        <span><strong>Total Quantity:</strong> {{ totalQuantity }}</span>
+      </div>
+      <table class="items-table">
+        <thead>
+          <tr>
+            <th>Item</th>
+            <th>Batch</th>
+            <th>Std Cost</th>
+            <th>Std Price</th>
+            <th>Margin</th>
+            <th>Qty</th>
+            <th>Discount %</th>
+            <th>Total Cost</th>
+            <th>Total Selling</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let item of items">
+            <td>{{ item.item }}</td>
+            <td>{{ item.batch }}</td>
+            <td>{{ item.standardCost | number:'1.2-2' }}</td>
+            <td>{{ item.standardPrice | number:'1.2-2' }}</td>
+            <td class="margin-value">{{ (item.standardPrice - item.standardCost) | number:'1.2-2' }}</td>
+            <td>{{ item.quantity }}</td>
+            <td>{{ item.discount }}%</td>
+            <td>{{ item.totalCost | number:'1.2-2' }}</td>
+            <td>{{ item.totalSelling | number:'1.2-2' }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="empty-state" *ngIf="items.length === 0">
+      <p>No items added yet. Use the form above to add purchase items.</p>
+    </div>
+  </div>
+</div>
