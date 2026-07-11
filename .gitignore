@@ -61,9 +61,10 @@ logs/
 
 # Terraform
 .terraform/
-terraform/terraform.tfvars
 *.tfstate
 *.tfstate.backup
+*.tfvars
+!terraform/.terraform.lock.hcl
 
 # Docker
 docker-data/
