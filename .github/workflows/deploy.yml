@@ -64,64 +64,95 @@ jobs:
 
       - name: Debug Connection String (safe)
         env:
-          SQL_CONNECTION_STRING: ${{ secrets.SQL_CONNECTION_STRING }}
+          CS: ${{ secrets.SQL_CONNECTION_STRING }}
         run: |
-          echo "Connection string length: ${#SQL_CONNECTION_STRING}"
-          echo "Connection string starts with: ${SQL_CONNECTION_STRING:0:20}..."
+          echo "Connection string length: ${#CS}"
+          echo "First 30 chars: $(echo "$CS" | cut -c1-30)..."
+          echo "Contains 'Server=': $(echo "$CS" | grep -i 'Server=' && echo YES || echo NO)"
+          echo "Contains 'Initial Catalog=': $(echo "$CS" | grep -i 'Initial Catalog' && echo YES || echo NO)"
+          echo "Contains 'User ID=': $(echo "$CS" | grep -i 'User ID' && echo YES || echo NO)"
 
       - name: Run Database Migration Script
         env:
-          SQL_CONNECTION_STRING: ${{ secrets.SQL_CONNECTION_STRING }}
+          CS: ${{ secrets.SQL_CONNECTION_STRING }}
         run: |
-          # Parse connection string using simple sed
-          extract_val() {
-            echo "$SQL_CONNECTION_STRING" | tr ';' '\n' | grep -i "^[[:space:]]*$1=" | head -1 | sed "s/^[[:space:]]*$1=//i"
+          # Parse connection string - split into lines, find key, extract value after '='
+          get_val() {
+            echo "$CS" | tr ';' '\n' | while IFS='=' read -r key value; do
+              key="$(echo "$key" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//' | tr '[:upper:]' '[:lower:]')"
+              value="$(echo "$value" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')"
+              want="$(echo "$1" | tr '[:upper:]' '[:lower:]')"
+              if [ "$key" = "$want" ]; then
+                echo "$value"
+                return 0
+              fi
+            done
           }
 
-          SERVER_RAW=$(extract_val "Server")
+          SERVER_RAW=$(get_val "Server")
           SERVER="${SERVER_RAW#tcp:}"
           PORT="${SERVER##*,}"
           SERVER="${SERVER%%,*}"
           [ -z "$PORT" ] && PORT="1433"
-          [ -z "$SERVER" ] && SERVER="$SERVER_RAW"
-          DB=$(extract_val "Initial Catalog")
-          [ -z "$DB" ] && DB=$(extract_val "Database")
-          USER=$(extract_val "User ID")
-          [ -z "$USER" ] && USER=$(extract_val "UID")
-          PASS=$(extract_val "Password")
-          [ -z "$PASS" ] && PASS=$(extract_val "PWD")
+          DB=$(get_val "Initial Catalog")
+          [ -z "$DB" ] && DB=$(get_val "Database")
+          USER=$(get_val "User ID")
+          [ -z "$USER" ] && USER=$(get_val "UID")
+          PASS=$(get_val "Password")
+          [ -z "$PASS" ] && PASS=$(get_val "PWD")
 
+          echo "=== Database Connection Info ==="
           echo "Server: $SERVER"
           echo "Port: $PORT"
           echo "Database: $DB"
           echo "User: $USER"
+          echo "Password length: ${#PASS}"
+          echo "==============================="
+
+          if [ -z "$SERVER" ] || [ -z "$DB" ] || [ -z "$USER" ] || [ -z "$PASS" ]; then
+            echo "❌ Failed to parse connection string. Please check SQL_CONNECTION_STRING secret."
+            exit 1
+          fi
 
           echo "Connecting to SQL Server..."
-          until sqlcmd -S "$SERVER,$PORT" -U "$USER" -P "$PASS" -Q "SELECT 1" > /dev/null 2>&1; do
-            echo "Waiting for SQL Server to be ready..."
+          for i in $(seq 1 15); do
+            if sqlcmd -S "$SERVER,$PORT" -U "$USER" -P "$PASS" -Q "SELECT 1" > /dev/null 2>&1; then
+              echo "SQL Server is ready!"
+              break
+            fi
+            echo "Attempt $i: Waiting for SQL Server..."
             sleep 10
           done
-          echo "SQL Server is ready. Applying schema..."
+
+          echo "Applying schema..."
           sqlcmd -S "$SERVER,$PORT" -U "$USER" -P "$PASS" -d "$DB" -i database/init.sql
           echo "✅ Database schema applied successfully!"
 
       - name: Verify Tables
         env:
-          SQL_CONNECTION_STRING: ${{ secrets.SQL_CONNECTION_STRING }}
+          CS: ${{ secrets.SQL_CONNECTION_STRING }}
         run: |
-          extract_val() {
-            echo "$SQL_CONNECTION_STRING" | tr ';' '\n' | grep -i "^[[:space:]]*$1=" | head -1 | sed "s/^[[:space:]]*$1=//i"
+          get_val() {
+            echo "$CS" | tr ';' '\n' | while IFS='=' read -r key value; do
+              key="$(echo "$key" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//' | tr '[:upper:]' '[:lower:]')"
+              value="$(echo "$value" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')"
+              want="$(echo "$1" | tr '[:upper:]' '[:lower:]')"
+              if [ "$key" = "$want" ]; then
+                echo "$value"
+                return 0
+              fi
+            done
           }
 
-          SERVER_RAW=$(extract_val "Server")
+          SERVER_RAW=$(get_val "Server")
           SERVER="${SERVER_RAW#tcp:}"
           PORT="${SERVER##*,}"
           SERVER="${SERVER%%,*}"
           [ -z "$PORT" ] && PORT="1433"
-          DB=$(extract_val "Initial Catalog")
-          [ -z "$DB" ] && DB=$(extract_val "Database")
-          USER=$(extract_val "User ID")
-          PASS=$(extract_val "Password")
+          DB=$(get_val "Initial Catalog")
+          [ -z "$DB" ] && DB=$(get_val "Database")
+          USER=$(get_val "User ID")
+          PASS=$(get_val "Password")
 
           sqlcmd -S "$SERVER,$PORT" -U "$USER" -P "$PASS" -d "$DB" \
             -Q "SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA='dbo'"
