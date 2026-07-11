@@ -59,5 +59,11 @@ ehthumbs.db
 *.log
 logs/
 
+# Terraform
+.terraform/
+terraform/terraform.tfvars
+*.tfstate
+*.tfstate.backup
+
 # Docker
 docker-data/
