@@ -91,15 +91,15 @@ jobs:
 
           get_val() {
             local key="$1"
-            local result
-            result=$(grep -m1 -i "$key=[^;]*" /tmp/cs.txt | cut -d'=' -f2-)
-            echo "$result"
+            # Use -o to return only the matching portion, not the whole line
+            grep -o -m1 -i "$key=[^;]*" /tmp/cs.txt | cut -d'=' -f2-
           }
 
           SERVER_RAW=$(get_val "Server")
           SERVER="${SERVER_RAW#tcp:}"
-          PORT="${SERVER##*,}"
-          SERVER="${SERVER%%,*}"
+          # Split server:port by comma, but only up to the first semicolon
+          SERVER_ONLY=$(echo "$SERVER" | grep -o '^[^,;]*')
+          PORT=$(echo "$SERVER" | grep -oP ',\K\d+' | head -1)
           [ -z "$PORT" ] && PORT="1433"
           DB=$(get_val "Initial Catalog")
           [ -z "$DB" ] && DB=$(get_val "Database")
@@ -109,21 +109,24 @@ jobs:
           [ -z "$PASS" ] && PASS=$(get_val "PWD")
 
           echo "=== Database Connection Info ==="
-          echo "Server: [$SERVER]"
+          echo "Server: [$SERVER_ONLY]"
           echo "Port: [$PORT]"
           echo "Database: [$DB]"
           echo "User: [$USER]"
           echo "Password length: ${#PASS}"
           echo "==============================="
 
-          if [ -z "$SERVER" ] || [ -z "$DB" ] || [ -z "$USER" ] || [ -z "$PASS" ]; then
+          if [ -z "$SERVER_ONLY" ] || [ -z "$DB" ] || [ -z "$USER" ] || [ -z "$PASS" ]; then
             echo "❌ Failed to parse connection string"
             echo "Raw grep results:"
-            echo "  Server: [$(grep -m1 -i 'Server=[^;]*' /tmp/cs.txt)]"
-            echo "  Catalog: [$(grep -m1 -i 'Initial Catalog=[^;]*' /tmp/cs.txt)]"
-            echo "  User: [$(grep -m1 -i 'User ID=[^;]*' /tmp/cs.txt)]"
+            echo "  Server: [$(grep -o -m1 -i 'Server=[^;]*' /tmp/cs.txt)]"
+            echo "  Catalog: [$(grep -o -m1 -i 'Initial Catalog=[^;]*' /tmp/cs.txt)]"
+            echo "  User: [$(grep -o -m1 -i 'User ID=[^;]*' /tmp/cs.txt)]"
             exit 1
           fi
+
+          # Update SERVER variable to the clean value
+          SERVER="$SERVER_ONLY"
 
           echo "Connecting to SQL Server..."
           for i in $(seq 1 15); do
@@ -145,20 +148,20 @@ jobs:
         run: |
           printf '%s' "$CS" > /tmp/cs.txt
           get_val() {
-            grep -m1 -i "$1=[^;]*" /tmp/cs.txt | cut -d'=' -f2-
+            grep -o -m1 -i "$1=[^;]*" /tmp/cs.txt | cut -d'=' -f2-
           }
 
           SERVER_RAW=$(get_val "Server")
           SERVER="${SERVER_RAW#tcp:}"
-          PORT="${SERVER##*,}"
-          SERVER="${SERVER%%,*}"
+          SERVER_ONLY=$(echo "$SERVER" | grep -o '^[^,;]*')
+          PORT=$(echo "$SERVER" | grep -oP ',\K\d+' | head -1)
           [ -z "$PORT" ] && PORT="1433"
           DB=$(get_val "Initial Catalog")
           [ -z "$DB" ] && DB=$(get_val "Database")
           USER=$(get_val "User ID")
           PASS=$(get_val "Password")
 
-          sqlcmd -S "$SERVER,$PORT" -U "$USER" -P "$PASS" -d "$DB" \
+          sqlcmd -S "$SERVER_ONLY,$PORT" -U "$USER" -P "$PASS" -d "$DB" \
             -Q "SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA='dbo'"
 
   # ────────────────────────────────────────────────
