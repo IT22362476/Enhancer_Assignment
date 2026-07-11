@@ -26,20 +26,24 @@
       </div>
 
       <div class="form-row">
-        <div class="form-group">
+        <div class="form-group" [class.has-error]="formErrors['item'] && formTouched['item']">
           <label>Item</label>
           <div class="input-wrapper">
             <i class="fas fa-tag input-icon"></i>
             <input
               type="text"
               [(ngModel)]="form.item"
-              (input)="filterItems()"
+              (input)="filterItems(); markTouched('item')"
               (focus)="filterItems()"
-              (blur)="onBlur()"
+              (blur)="onBlur(); markTouched('item')"
               placeholder="Search item..."
               class="form-control has-icon"
               autocomplete="off"
             />
+          </div>
+          <div class="field-error" *ngIf="formErrors['item'] && formTouched['item']">
+            <i class="fas fa-exclamation-circle"></i>
+            {{ formErrors['item'] }}
           </div>
           <ul class="autocomplete-list" *ngIf="showAutocomplete && filteredItems.length > 0">
             <li *ngFor="let item of filteredItems" (click)="selectItem(item)">
@@ -48,45 +52,57 @@
             </li>
           </ul>
         </div>
-        <div class="form-group">
+        <div class="form-group" [class.has-error]="formErrors['batch'] && formTouched['batch']">
           <label>Batch</label>
           <div class="input-wrapper">
             <i class="fas fa-layer-group input-icon"></i>
-            <select [(ngModel)]="form.batch" class="form-control has-icon">
+            <select [(ngModel)]="form.batch" (change)="markTouched('batch')" class="form-control has-icon">
               <option value="">Select Batch</option>
               <option *ngFor="let loc of locations" [value]="loc.location_Name">
                 {{ loc.location_Name }}
               </option>
             </select>
           </div>
+          <div class="field-error" *ngIf="formErrors['batch'] && formTouched['batch']">
+            <i class="fas fa-exclamation-circle"></i>
+            {{ formErrors['batch'] }}
+          </div>
         </div>
       </div>
 
       <div class="form-row">
-        <div class="form-group">
+        <div class="form-group" [class.has-error]="formErrors['standardCost'] && formTouched['standardCost']">
           <label>Standard Cost</label>
           <div class="input-wrapper">
             <i class="fas fa-dollar-sign input-icon"></i>
             <input
               type="number"
               [(ngModel)]="form.standardCost"
-              (input)="calculate()"
+              (input)="calculate(); markTouched('standardCost')"
               placeholder="0"
               class="form-control has-icon"
             />
           </div>
+          <div class="field-error" *ngIf="formErrors['standardCost'] && formTouched['standardCost']">
+            <i class="fas fa-exclamation-circle"></i>
+            {{ formErrors['standardCost'] }}
+          </div>
         </div>
-        <div class="form-group">
+        <div class="form-group" [class.has-error]="formErrors['standardPrice'] && formTouched['standardPrice']">
           <label>Standard Price</label>
           <div class="input-wrapper">
             <i class="fas fa-dollar-sign input-icon"></i>
             <input
               type="number"
               [(ngModel)]="form.standardPrice"
-              (input)="calculate()"
+              (input)="calculate(); markTouched('standardPrice')"
               placeholder="0"
               class="form-control has-icon"
             />
+          </div>
+          <div class="field-error" *ngIf="formErrors['standardPrice'] && formTouched['standardPrice']">
+            <i class="fas fa-exclamation-circle"></i>
+            {{ formErrors['standardPrice'] }}
           </div>
         </div>
         <div class="form-group">
@@ -105,30 +121,38 @@
       </div>
 
       <div class="form-row">
-        <div class="form-group">
+        <div class="form-group" [class.has-error]="formErrors['quantity'] && formTouched['quantity']">
           <label>Quantity</label>
           <div class="input-wrapper">
             <i class="fas fa-cubes input-icon"></i>
             <input
               type="number"
               [(ngModel)]="form.quantity"
-              (input)="calculate()"
+              (input)="calculate(); markTouched('quantity')"
               placeholder="0"
               class="form-control has-icon"
             />
           </div>
+          <div class="field-error" *ngIf="formErrors['quantity'] && formTouched['quantity']">
+            <i class="fas fa-exclamation-circle"></i>
+            {{ formErrors['quantity'] }}
+          </div>
         </div>
-        <div class="form-group">
+        <div class="form-group" [class.has-error]="formErrors['discount'] && formTouched['discount']">
           <label>Discount %</label>
           <div class="input-wrapper">
             <i class="fas fa-percentage input-icon"></i>
             <input
               type="number"
               [(ngModel)]="form.discount"
-              (input)="calculate()"
+              (input)="calculate(); markTouched('discount')"
               placeholder="0"
               class="form-control has-icon"
             />
+          </div>
+          <div class="field-error" *ngIf="formErrors['discount'] && formTouched['discount']">
+            <i class="fas fa-exclamation-circle"></i>
+            {{ formErrors['discount'] }}
           </div>
         </div>
       </div>

@@ -1,0 +1,16 @@
+# ── Azure Deployment Variables ──────────────────
+# Copy this file to terraform.tfvars and fill in your values.
+
+# Azure region
+location = "Southeast Asia"
+
+# Globally unique names (change these!)
+app_service_name = "purchasebill-api-youname"     # Must be globally unique
+sql_server_name  = "sql-purchasebill-yourname"    # Must be globally unique
+
+# SQL Admin credentials
+sql_admin_username = "sqladmin"
+sql_admin_password = "YourStrongP@ssw0rd123!"
+
+# Backend URL (populated after first deployment; used for frontend build)
+backend_url = "https://purchasebill-api-yourname.azurewebsites.net"

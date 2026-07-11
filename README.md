@@ -92,3 +92,110 @@ Use the company credentials as mentioned in the assignment:
 - Username: `sa`
 - Password: `Pa$$w0rd1`
 - Database: `PurchaseBillDB` (auto-created)
+
+---
+
+## ☁️ Deployment to Azure (CI/CD Pipeline)
+
+The project uses a **two-step approach**:
+1. **Terraform locally** — provision infrastructure (works with `az login`, no Azure AD restrictions)
+2. **GitHub Actions** — build & deploy code (uses publish profiles, no service principal needed)
+
+### Architecture
+```
+Local Machine                 GitHub Actions (on push to main)
+─────────────                 ────────────────────────────────
+az login (no AD req.)         
+     │                              
+     ▼                              
+Terraform apply               1. Validate secrets
+  ─► Resource Group            2. Database: run init.sql
+  ─► App Service               3. Backend: dotnet publish
+  ─► Static Web App               + deploy via publish profile
+  ─► Azure SQL DB               4. Frontend: ng build --prod
+     │                             + deploy via SWA token
+     ▼                              
+Copy outputs into             
+GitHub Secrets & Variables    
+```
+
+### Step 1: Provision Infrastructure (Run Once)
+```bash
+# Login to Azure (works with student subscriptions!)
+az login
+
+# Set your subscription
+az account set --subscription "<YOUR_SUBSCRIPTION_ID>"
+
+# Go to terraform directory
+cd terraform
+
+# Copy and fill in your values
+cp terraform.tfvars.example terraform.tfvars
+# Edit terraform.tfvars with your unique names
+
+# Initialize and apply
+terraform init
+terraform apply
+```
+
+After `terraform apply` completes, note these outputs:
+- `backend_url` → e.g., `https://purchasebill-api-yourname.azurewebsites.net`
+- `frontend_url` → e.g., `https://<swa-name>.azureedge.net`
+- `sql_server_fqdn` → your SQL Server address
+- `sql_database_name` → `PurchaseBillDB`
+
+### Step 2: Get Publish Profile (Portal)
+1. Go to **Azure Portal** → **App Service** (`purchasebill-api-xxx`)
+2. Go to **Deployment** → **Deployment Center** → **Get publish profile**
+3. Download the `.PublishSettings` file — the full XML content is your secret
+
+### Step 3: Get Static Web Apps Deployment Token (Portal)
+1. Go to **Azure Portal** → **Static Web App** (`swa-purchasebill`)
+2. Go to **Settings** → **Deployment tokens**
+3. Copy the token value
+
+### Step 4: Build SQL Connection String
+Format:
+```
+Server=tcp:<SQL_SERVER_FQDN>,1433;Initial Catalog=PurchaseBillDB;Persist Security Info=False;User ID=<SQL_USER>;Password=<SQL_PASS>;MultipleActiveResultSets=False;Encrypt=True;TrustServerCertificate=False;Connection Timeout=30;
+```
+
+### 🔐 Required GitHub Secrets
+Go to GitHub → **Settings** → **Secrets and variables** → **Actions**:
+
+| Secret Name | Description | How to Get |
+|---|---|---|
+| `AZURE_WEBAPP_PUBLISH_PROFILE` | Full XML from downloaded `.PublishSettings` file | App Service → Deployment Center → Get publish profile |
+| `AZURE_STATIC_WEB_APPS_API_TOKEN` | Deployment token hash | Static Web App → Deployment tokens |
+| `SQL_CONNECTION_STRING` | Full SQL connection string | Build from Terraform outputs (see above) |
+
+### ⚙️ Required GitHub Variables
+| Variable Name | Description |
+|---|---|
+| `BACKEND_URL` | Backend URL from Terraform output (e.g., `https://purchasebill-api-yourname.azurewebsites.net`) |
+| `SWA_NAME` | Static Web App name (e.g., `swa-purchasebill`) |
+
+### 🚀 Deploy
+Push to `main` branch — the pipeline runs automatically:
+```bash
+git add .
+git commit -m "Deploy to Azure"
+git push origin main
+```
+
+Or trigger manually: GitHub → **Actions** → **Deploy Purchase Bill App** → **Run workflow**.
+
+### 📍 Live Demo URL
+After deployment, your app will be live at:
+- **Frontend:** `https://<swa-name>.azureedge.net`
+- **Backend API:** `https://<app-service-name>.azurewebsites.net`
+- **Swagger:** `https://<app-service-name>.azurewebsites.net/swagger`
+
+### 🧹 Clean Up Resources
+To avoid ongoing costs:
+```bash
+cd terraform
+terraform destroy
+```
+Or delete the resource group in Azure Portal.
