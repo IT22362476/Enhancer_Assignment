@@ -1,50 +1,86 @@
 <div class="login-container">
+  <div class="bg-shapes">
+    <span class="shape shape-1"></span>
+    <span class="shape shape-2"></span>
+    <span class="shape shape-3"></span>
+    <span class="shape shape-4"></span>
+  </div>
+
   <div class="login-card">
     <div class="logo-section">
       <img src="assets/enhanzer-logo.png" alt="Enhanzer Logo" class="logo"
            onerror="this.style.display='none'" />
+      <div class="logo-badge" style="display: none;">
+        <i class="fas fa-receipt"></i>
+      </div>
       <h1>Enhanzer</h1>
       <p class="subtitle">Full Stack Developer Assignment</p>
     </div>
+
     <form (ngSubmit)="onLogin()" #loginForm="ngForm">
       <div class="form-group" [class.has-error]="emailInput.invalid && emailInput.touched">
-        <label for="email">Email</label>
-        <input
-          type="email"
-          id="email"
-          name="email"
-          [(ngModel)]="email"
-          placeholder="info@enhanzer.com"
-          required
-          email
-          #emailInput="ngModel"
-          class="form-control"
-        />
+        <div class="input-wrapper">
+          <i class="fas fa-envelope input-icon"></i>
+          <input
+            type="email"
+            id="email"
+            name="email"
+            [(ngModel)]="email"
+            placeholder=" "
+            required
+            email
+            #emailInput="ngModel"
+            class="form-control"
+          />
+          <label for="email" class="floating-label">Email</label>
+        </div>
         <div *ngIf="emailInput.invalid && emailInput.touched" class="field-error">
+          <i class="fas fa-exclamation-circle"></i>
           <span *ngIf="emailInput.errors?.['required']">Email is required.</span>
           <span *ngIf="emailInput.errors?.['email']">Please enter a valid email.</span>
         </div>
       </div>
+
       <div class="form-group" [class.has-error]="passwordInput.invalid && passwordInput.touched">
-        <label for="password">Password</label>
-        <input
-          type="password"
-          id="password"
-          name="password"
-          [(ngModel)]="password"
-          placeholder="Enter your password"
-          required
-          #passwordInput="ngModel"
-          class="form-control"
-        />
+        <div class="input-wrapper">
+          <i class="fas fa-lock input-icon"></i>
+          <input
+            type="password"
+            id="password"
+            name="password"
+            [(ngModel)]="password"
+            placeholder=" "
+            required
+            #passwordInput="ngModel"
+            class="form-control"
+          />
+          <label for="password" class="floating-label">Password</label>
+        </div>
         <div *ngIf="passwordInput.invalid && passwordInput.touched" class="field-error">
+          <i class="fas fa-exclamation-circle"></i>
           <span>Password is required.</span>
         </div>
       </div>
-      <div *ngIf="error" class="error-message">{{ error }}</div>
+
+      <div *ngIf="error" class="error-message">
+        <i class="fas fa-exclamation-triangle"></i>
+        {{ error }}
+      </div>
+
       <button type="submit" class="btn-login" [disabled]="loading">
-        {{ loading ? 'Signing in...' : 'Sign In' }}
+        <span *ngIf="!loading" class="btn-content">
+          <i class="fas fa-sign-in-alt"></i>
+          Sign In
+        </span>
+        <span *ngIf="loading" class="spinner-wrapper">
+          <span class="spinner"></span>
+          Signing in...
+        </span>
       </button>
     </form>
+
+    <div class="login-footer">
+      <p>&copy; 2024 Enhanzer. All rights reserved.</p>
+    </div>
   </div>
 </div>
