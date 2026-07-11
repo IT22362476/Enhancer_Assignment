@@ -19,6 +19,7 @@
             [(ngModel)]="form.item"
             (input)="filterItems()"
             (focus)="filterItems()"
+            (blur)="onBlur()"
             placeholder="Search item..."
             class="form-control"
             autocomplete="off"

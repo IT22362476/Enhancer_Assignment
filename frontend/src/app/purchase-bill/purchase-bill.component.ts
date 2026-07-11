@@ -70,6 +70,13 @@ export class PurchaseBillComponent implements OnInit {
     this.showAutocomplete = true;
   }
 
+  onBlur(): void {
+    // Delay hiding to allow click on autocomplete item to register first
+    setTimeout(() => {
+      this.showAutocomplete = false;
+    }, 150);
+  }
+
   selectItem(item: string): void {
     this.form.item = item;
     this.showAutocomplete = false;
