@@ -76,12 +76,24 @@ jobs:
         env:
           CS: ${{ secrets.SQL_CONNECTION_STRING }}
         run: |
-          # Write connection string to a temp file to avoid pipe/shell issues
-          echo "$CS" > /tmp/cs.txt
+          echo "=== DEBUG: Connection String Check ==="
+          echo "CS length: ${#CS}"
+          echo "CS starts with: ${CS:0:40}"
+          echo "Writing to file..."
+          printf '%s' "$CS" > /tmp/cs.txt
+          echo "File size: $(wc -c < /tmp/cs.txt) bytes"
+          echo "First line of file:"
+          head -c 80 /tmp/cs.txt
+          echo ""
+          echo "Testing grep on file..."
+          grep -i 'server=' /tmp/cs.txt || echo "grep returned nothing!"
+          echo "=== END DEBUG ==="
 
           get_val() {
-            local key_name="$1"
-            grep -io "$key_name=[^;]*" /tmp/cs.txt | head -1 | cut -d'=' -f2-
+            local key="$1"
+            local result
+            result=$(grep -m1 -i "$key=[^;]*" /tmp/cs.txt | cut -d'=' -f2-)
+            echo "$result"
           }
 
           SERVER_RAW=$(get_val "Server")
@@ -97,18 +109,19 @@ jobs:
           [ -z "$PASS" ] && PASS=$(get_val "PWD")
 
           echo "=== Database Connection Info ==="
-          echo "Server: $SERVER"
-          echo "Port: $PORT"
-          echo "Database: $DB"
-          echo "User: $USER"
+          echo "Server: [$SERVER]"
+          echo "Port: [$PORT]"
+          echo "Database: [$DB]"
+          echo "User: [$USER]"
           echo "Password length: ${#PASS}"
           echo "==============================="
 
           if [ -z "$SERVER" ] || [ -z "$DB" ] || [ -z "$USER" ] || [ -z "$PASS" ]; then
-            echo "❌ Failed to parse connection string. Please check SQL_CONNECTION_STRING secret."
-            echo "Raw server value: [$SERVER_RAW]"
-            echo "Raw db value: [$(get_val "Initial Catalog")]"
-            echo "Raw user value: [$(get_val "User ID")]"
+            echo "❌ Failed to parse connection string"
+            echo "Raw grep results:"
+            echo "  Server: [$(grep -m1 -i 'Server=[^;]*' /tmp/cs.txt)]"
+            echo "  Catalog: [$(grep -m1 -i 'Initial Catalog=[^;]*' /tmp/cs.txt)]"
+            echo "  User: [$(grep -m1 -i 'User ID=[^;]*' /tmp/cs.txt)]"
             exit 1
           fi
 
@@ -130,9 +143,9 @@ jobs:
         env:
           CS: ${{ secrets.SQL_CONNECTION_STRING }}
         run: |
-          echo "$CS" > /tmp/cs.txt
+          printf '%s' "$CS" > /tmp/cs.txt
           get_val() {
-            grep -io "$1=[^;]*" /tmp/cs.txt | head -1 | cut -d'=' -f2-
+            grep -m1 -i "$1=[^;]*" /tmp/cs.txt | cut -d'=' -f2-
           }
 
           SERVER_RAW=$(get_val "Server")
