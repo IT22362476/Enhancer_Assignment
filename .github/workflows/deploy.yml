@@ -62,18 +62,41 @@ jobs:
           sudo ACCEPT_EULA=Y apt-get install -y -qq mssql-tools unixodbc-dev
           echo '/opt/mssql-tools/bin' >> $GITHUB_PATH
 
+      - name: Debug Connection String (safe)
+        env:
+          SQL_CONNECTION_STRING: ${{ secrets.SQL_CONNECTION_STRING }}
+        run: |
+          echo "Connection string length: ${#SQL_CONNECTION_STRING}"
+          echo "Connection string starts with: ${SQL_CONNECTION_STRING:0:20}..."
+
       - name: Run Database Migration Script
         env:
           SQL_CONNECTION_STRING: ${{ secrets.SQL_CONNECTION_STRING }}
         run: |
-          # Parse connection string parts
-          SERVER=$(echo "$SQL_CONNECTION_STRING" | grep -oP 'Server=tcp:\K[^,]+')
-          PORT=$(echo "$SQL_CONNECTION_STRING" | grep -oP ',\K\d+(?=;)' || echo "1433")
-          DB=$(echo "$SQL_CONNECTION_STRING" | grep -oP 'Initial Catalog=\K[^;]+')
-          USER=$(echo "$SQL_CONNECTION_STRING" | grep -oP 'User ID=\K[^;]+')
-          PASS=$(echo "$SQL_CONNECTION_STRING" | grep -oP 'Password=\K[^;]+')
+          # Parse connection string using simple sed
+          extract_val() {
+            echo "$SQL_CONNECTION_STRING" | tr ';' '\n' | grep -i "^[[:space:]]*$1=" | head -1 | sed "s/^[[:space:]]*$1=//i"
+          }
 
-          echo "Running database migration on $SERVER..."
+          SERVER_RAW=$(extract_val "Server")
+          SERVER="${SERVER_RAW#tcp:}"
+          PORT="${SERVER##*,}"
+          SERVER="${SERVER%%,*}"
+          [ -z "$PORT" ] && PORT="1433"
+          [ -z "$SERVER" ] && SERVER="$SERVER_RAW"
+          DB=$(extract_val "Initial Catalog")
+          [ -z "$DB" ] && DB=$(extract_val "Database")
+          USER=$(extract_val "User ID")
+          [ -z "$USER" ] && USER=$(extract_val "UID")
+          PASS=$(extract_val "Password")
+          [ -z "$PASS" ] && PASS=$(extract_val "PWD")
+
+          echo "Server: $SERVER"
+          echo "Port: $PORT"
+          echo "Database: $DB"
+          echo "User: $USER"
+
+          echo "Connecting to SQL Server..."
           until sqlcmd -S "$SERVER,$PORT" -U "$USER" -P "$PASS" -Q "SELECT 1" > /dev/null 2>&1; do
             echo "Waiting for SQL Server to be ready..."
             sleep 10
@@ -86,11 +109,20 @@ jobs:
         env:
           SQL_CONNECTION_STRING: ${{ secrets.SQL_CONNECTION_STRING }}
         run: |
-          SERVER=$(echo "$SQL_CONNECTION_STRING" | grep -oP 'Server=tcp:\K[^,]+')
-          PORT=$(echo "$SQL_CONNECTION_STRING" | grep -oP ',\K\d+(?=;)' || echo "1433")
-          DB=$(echo "$SQL_CONNECTION_STRING" | grep -oP 'Initial Catalog=\K[^;]+')
-          USER=$(echo "$SQL_CONNECTION_STRING" | grep -oP 'User ID=\K[^;]+')
-          PASS=$(echo "$SQL_CONNECTION_STRING" | grep -oP 'Password=\K[^;]+')
+          extract_val() {
+            echo "$SQL_CONNECTION_STRING" | tr ';' '\n' | grep -i "^[[:space:]]*$1=" | head -1 | sed "s/^[[:space:]]*$1=//i"
+          }
+
+          SERVER_RAW=$(extract_val "Server")
+          SERVER="${SERVER_RAW#tcp:}"
+          PORT="${SERVER##*,}"
+          SERVER="${SERVER%%,*}"
+          [ -z "$PORT" ] && PORT="1433"
+          DB=$(extract_val "Initial Catalog")
+          [ -z "$DB" ] && DB=$(extract_val "Database")
+          USER=$(extract_val "User ID")
+          PASS=$(extract_val "Password")
+
           sqlcmd -S "$SERVER,$PORT" -U "$USER" -P "$PASS" -d "$DB" \
             -Q "SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA='dbo'"
 
