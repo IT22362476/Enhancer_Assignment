@@ -16,10 +16,10 @@ export class PurchaseBillComponent implements OnInit {
   form = {
     item: '',
     batch: '',
-    standardCost: 0,
-    standardPrice: 0,
-    quantity: 0,
-    discount: 0
+    standardCost: null as number | null,
+    standardPrice: null as number | null,
+    quantity: null as number | null,
+    discount: null as number | null
   };
 
   calculated = {
@@ -220,8 +220,11 @@ export class PurchaseBillComponent implements OnInit {
   }
 
   resetForm(): void {
-    this.form = { item: '', batch: '', standardCost: 0, standardPrice: 0, quantity: 0, discount: 0 };
+    this.form = { item: '', batch: '', standardCost: null, standardPrice: null, quantity: null, discount: null };
     this.calculated = { margin: 0, totalCost: 0, totalSelling: 0 };
+    // Reset validation state so errors don't show until user interacts again
+    Object.keys(this.formTouched).forEach(key => this.formTouched[key] = false);
+    Object.keys(this.formErrors).forEach(key => this.formErrors[key] = '');
   }
 
   logout(): void {
