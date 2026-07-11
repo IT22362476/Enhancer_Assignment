@@ -76,17 +76,12 @@ jobs:
         env:
           CS: ${{ secrets.SQL_CONNECTION_STRING }}
         run: |
-          # Parse connection string - split into lines, find key, extract value after '='
+          # Write connection string to a temp file to avoid pipe/shell issues
+          echo "$CS" > /tmp/cs.txt
+
           get_val() {
-            echo "$CS" | tr ';' '\n' | while IFS='=' read -r key value; do
-              key="$(echo "$key" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//' | tr '[:upper:]' '[:lower:]')"
-              value="$(echo "$value" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')"
-              want="$(echo "$1" | tr '[:upper:]' '[:lower:]')"
-              if [ "$key" = "$want" ]; then
-                echo "$value"
-                return 0
-              fi
-            done
+            local key_name="$1"
+            grep -io "$key_name=[^;]*" /tmp/cs.txt | head -1 | cut -d'=' -f2-
           }
 
           SERVER_RAW=$(get_val "Server")
@@ -111,6 +106,9 @@ jobs:
 
           if [ -z "$SERVER" ] || [ -z "$DB" ] || [ -z "$USER" ] || [ -z "$PASS" ]; then
             echo "❌ Failed to parse connection string. Please check SQL_CONNECTION_STRING secret."
+            echo "Raw server value: [$SERVER_RAW]"
+            echo "Raw db value: [$(get_val "Initial Catalog")]"
+            echo "Raw user value: [$(get_val "User ID")]"
             exit 1
           fi
 
@@ -132,16 +130,9 @@ jobs:
         env:
           CS: ${{ secrets.SQL_CONNECTION_STRING }}
         run: |
+          echo "$CS" > /tmp/cs.txt
           get_val() {
-            echo "$CS" | tr ';' '\n' | while IFS='=' read -r key value; do
-              key="$(echo "$key" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//' | tr '[:upper:]' '[:lower:]')"
-              value="$(echo "$value" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')"
-              want="$(echo "$1" | tr '[:upper:]' '[:lower:]')"
-              if [ "$key" = "$want" ]; then
-                echo "$value"
-                return 0
-              fi
-            done
+            grep -io "$1=[^;]*" /tmp/cs.txt | head -1 | cut -d'=' -f2-
           }
 
           SERVER_RAW=$(get_val "Server")
