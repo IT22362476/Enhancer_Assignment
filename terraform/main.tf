@@ -66,7 +66,7 @@ resource "azurerm_linux_web_app" "backend" {
   app_settings = {
     "ASPNETCORE_ENVIRONMENT"              = "Production"
     "ConnectionStrings__DefaultConnection" = local.sql_connection_string
-    "SCM_DO_BUILD_DURING_DEPLOYMENT"      = "true"
+    "SCM_DO_BUILD_DURING_DEPLOYMENT"      = "false"
   }
 
   tags = var.tags
