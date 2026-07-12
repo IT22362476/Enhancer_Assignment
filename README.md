@@ -1,38 +1,62 @@
-# Full Stack Developer Assignment - Purchase Bill Application
+# Purchase Bill Application
+
+A full-stack purchase bill management application built with Angular and .NET Core.
+
+## Architecture
+
+**3-Tier Architecture with REST API**
+
+| Tier | Technology | Purpose |
+|---|---|---|
+| **Client** | Angular 16, TypeScript, CSS3 | Single-page application with login and purchase bill form |
+| **Application** | .NET 8 Web API, C#, Entity Framework Core | REST API handling authentication and purchase operations |
+| **Data** | SQL Server (local via Docker / Azure SQL) | Stores user locations and purchase items |
 
 ## Technologies Used
-- **Frontend:** Angular (Latest), HTML5, CSS3, TypeScript
-- **Backend:** .NET Core 8, C#, Entity Framework Core, SQL Server
 
-## Project Structure
-```
-Enhancer_Assignment/
-├── frontend/                 # Angular application
-│   └── src/app/
-│       ├── login/            # Login page component
-│       ├── purchase-bill/    # Purchase Bill form component
-│       ├── services/         # Auth & Purchase API services
-│       ├── auth.guard.ts     # Route guard for authentication
-│       ├── app.module.ts     # Main module
-│       ├── app-routing.module.ts  # Routes
-│       └── app.component.ts  # Root component
-├── backend/                  # .NET Core Web API
-│   ├── Controllers/
-│   │   ├── AuthController.cs      # Login API
-│   │   └── PurchaseController.cs   # Purchase Bill API
-│   ├── Models/
-│   │   ├── LocationDetail.cs
-│   │   ├── LoginRequest.cs
-│   │   └── PurchaseItem.cs
-│   ├── Data/
-│   │   └── AppDbContext.cs
-│   └── Program.cs
-└── README.md
-```
+| Technology | Usage |
+|---|---|
+| **Angular 16** | Frontend SPA with component-based architecture, routing, form validation, and HTTP services |
+| **TypeScript** | Type-safe frontend code with interfaces and strong typing |
+| **.NET 8 Web API** | Backend REST API with controller-based endpoints |
+| **C#** | Backend business logic and data access |
+| **Entity Framework Core** | ORM for database operations with code-first approach |
+| **SQL Server** | Relational database for persisting location details and purchase items |
+| **Terraform** | Infrastructure as Code for provisioning Azure resources |
+| **GitHub Actions** | CI/CD pipeline for automated build and deployment |
+| **Azure App Service** | Hosting for the backend .NET API |
+| **Azure Static Web Apps** | Hosting for the frontend Angular application |
+| **Azure SQL** | Managed SQL Server database in the cloud |
 
-## How to Run
+## Features
 
-### 0. Prerequisites: Start SQL Server (Docker)
+### Task 1: Login Page
+- Email and password authentication form
+- Calls external POS API for credential validation
+- On success: retrieves `User_Locations` and saves to `Location_Details` table
+- On failure: displays error message from API
+- Route guard prevents unauthorized access to purchase bill page
+- Field-level validation with error messages
+
+### Task 2: Purchase Bill Form
+- **Item Field:** Autocomplete with fruit list (Mango, Apple, Banana, Orange, Grapes, Kiwi, Strawberry)
+- **Batch Dropdown:** Populated from saved `Location_Details` table
+- **Auto-calculated fields:**
+  - Margin = Standard Price − Standard Cost
+  - Total Cost = (Standard Cost × Quantity) − Discount%
+  - Total Selling = Standard Price × Quantity
+- **Items Table:** Displays all added items with calculated values
+- **Summary:** Total Items count and Total Quantity
+
+## How to Run Locally
+
+### Prerequisites
+- [.NET 8 SDK](https://dotnet.microsoft.com/download)
+- [Node.js 18+](https://nodejs.org/)
+- [Docker Desktop](https://www.docker.com/products/docker-desktop/)
+- [Angular CLI](https://angular.io/cli)
+
+### 1. Start SQL Server (Docker)
 ```bash
 docker run -e 'ACCEPT_EULA=Y' \
   -e 'MSSQL_SA_PASSWORD=Pa$$w0rd1' \
@@ -40,162 +64,45 @@ docker run -e 'ACCEPT_EULA=Y' \
   --name sqlserver \
   -d mcr.microsoft.com/mssql/server:2022-latest
 ```
-> **Note:** Install mssql-tools in the container for debugging:
-> ```bash
-> docker exec -u 0 sqlserver apt-get update -qq && docker exec -u 0 sqlserver apt-get install -y -qq mssql-tools
-> ```
 
-The database `PurchaseBillDB` is auto-created on first run.
-
-### 1. Start the Backend (.NET Core API)
+### 2. Start Backend
 ```bash
 cd backend
 dotnet run
 ```
-The API will start at: **http://localhost:5078**
+API runs at **http://localhost:5078**
 - Swagger UI: http://localhost:5078/swagger
-- Auth endpoint: POST http://localhost:5078/api/auth/login
-- Purchase endpoints: GET/POST http://localhost:5078/api/purchase/...
+- Auth: POST /api/auth/login
+- Purchase: GET/POST /api/purchase/items, GET /api/purchase/locations
 
-### 2. Start the Frontend (Angular)
+### 3. Start Frontend
 ```bash
 cd frontend
 npx ng serve
 ```
-The app will be available at: **http://localhost:4200**
+App runs at **http://localhost:4200**
 
-## Features Implemented
-
-### Task 1: Login Page
-- Beautiful login form with email and password fields
-- Calls external API: `https://ez-staging-api.azurewebsites.net/api/External_Api/POS_Api/Invoke`
-- On success: Saves `User_Locations` to SQLite `Location_Details` table
-- On failure: Shows error message
-- Route guard prevents access to purchase bill without login
-
-### Task 2: Purchase Bill Form (Post-Login)
-- **Item Field:** Autocomplete with fruits list (Mango, Apple, Banana, Orange, Grapes, Kiwi, Strawberry)
-- **Batch Dropdown:** Dynamically populated from `Location_Details` table
-- **Calculations:**
-  - Total Cost = (Standard Cost × Quantity) – Discount%
-  - Total Selling = Standard Price × Quantity
-- **Add to Table:** Items are saved to backend and displayed in a table
-- **Summary Section:** Shows Total Items and Total Quantity
-
-### Login Credentials (for testing)
-Use the company credentials as mentioned in the assignment:
+### Test Credentials
 - Email: `info@enhanzer.com`
 - Password: `Welcome#3`
 
-### SQL Server Credentials (Docker)
-- Server: `localhost,1433`
-- Username: `sa`
-- Password: `Pa$$w0rd1`
-- Database: `PurchaseBillDB` (auto-created)
-
----
-
-## ☁️ Deployment to Azure (CI/CD Pipeline)
-
-The project uses a **two-step approach**:
-1. **Terraform locally** — provision infrastructure (works with `az login`, no Azure AD restrictions)
-2. **GitHub Actions** — build & deploy code (uses publish profiles, no service principal needed)
-
-### Architecture
+## Project Structure
 ```
-Local Machine                 GitHub Actions (on push to main)
-─────────────                 ────────────────────────────────
-az login (no AD req.)         
-     │                              
-     ▼                              
-Terraform apply               1. Validate secrets
-  ─► Resource Group            2. Database: run init.sql
-  ─► App Service               3. Backend: dotnet publish
-  ─► Static Web App               + deploy via publish profile
-  ─► Azure SQL DB               4. Frontend: ng build --prod
-     │                             + deploy via SWA token
-     ▼                              
-Copy outputs into             
-GitHub Secrets & Variables    
+Enhancer_Assignment/
+├── frontend/                  # Angular application
+│   └── src/app/
+│       ├── login/             # Login page component
+│       ├── purchase-bill/     # Purchase Bill form + table component
+│       ├── services/          # AuthService, PurchaseService
+│       ├── auth.guard.ts      # Route guard
+│       ├── app.module.ts      # Root module
+│       └── app-routing.module.ts
+├── backend/                   # .NET 8 Web API
+│   ├── Controllers/           # AuthController, PurchaseController
+│   ├── Models/                # LoginRequest, LocationDetail, PurchaseItem
+│   ├── Data/                  # AppDbContext
+│   └── Program.cs
+├── database/
+│   └── init.sql               # SQL Server schema script
+└── README.md
 ```
-
-### Step 1: Provision Infrastructure (Run Once)
-```bash
-# Login to Azure (works with student subscriptions!)
-az login
-
-# Set your subscription
-az account set --subscription "<YOUR_SUBSCRIPTION_ID>"
-
-# Go to terraform directory
-cd terraform
-
-# Copy and fill in your values
-cp terraform.tfvars.example terraform.tfvars
-# Edit terraform.tfvars with your unique names
-
-# Initialize and apply
-terraform init
-terraform apply
-```
-
-After `terraform apply` completes, note these outputs:
-- `backend_url` → e.g., `https://purchasebill-api-yourname.azurewebsites.net`
-- `frontend_url` → e.g., `https://<swa-name>.azureedge.net`
-- `sql_server_fqdn` → your SQL Server address
-- `sql_database_name` → `PurchaseBillDB`
-
-### Step 2: Get Publish Profile (Portal)
-1. Go to **Azure Portal** → **App Service** (`purchasebill-api-xxx`)
-2. Go to **Deployment** → **Deployment Center** → **Get publish profile**
-3. Download the `.PublishSettings` file — the full XML content is your secret
-
-### Step 3: Get Static Web Apps Deployment Token (Portal)
-1. Go to **Azure Portal** → **Static Web App** (`swa-purchasebill`)
-2. Go to **Settings** → **Deployment tokens**
-3. Copy the token value
-
-### Step 4: Build SQL Connection String
-Format:
-```
-Server=tcp:<SQL_SERVER_FQDN>,1433;Initial Catalog=PurchaseBillDB;Persist Security Info=False;User ID=<SQL_USER>;Password=<SQL_PASS>;MultipleActiveResultSets=False;Encrypt=True;TrustServerCertificate=False;Connection Timeout=30;
-```
-
-### 🔐 Required GitHub Secrets
-Go to GitHub → **Settings** → **Secrets and variables** → **Actions**:
-
-| Secret Name | Description | How to Get |
-|---|---|---|
-| `AZURE_WEBAPP_PUBLISH_PROFILE` | Full XML from downloaded `.PublishSettings` file | App Service → Deployment Center → Get publish profile |
-| `AZURE_STATIC_WEB_APPS_API_TOKEN` | Deployment token hash | Static Web App → Deployment tokens |
-| `SQL_CONNECTION_STRING` | Full SQL connection string | Build from Terraform outputs (see above) |
-
-### ⚙️ Required GitHub Variables
-| Variable Name | Description |
-|---|---|
-| `BACKEND_URL` | Backend URL from Terraform output (e.g., `https://purchasebill-api-yourname.azurewebsites.net`) |
-| `SWA_NAME` | Static Web App name (e.g., `swa-purchasebill`) |
-
-### 🚀 Deploy
-Push to `main` branch — the pipeline runs automatically:
-```bash
-git add .
-git commit -m "Deploy to Azure"
-git push origin main
-```
-
-Or trigger manually: GitHub → **Actions** → **Deploy Purchase Bill App** → **Run workflow**.
-
-### 📍 Live Demo URL
-After deployment, your app will be live at:
-- **Frontend:** `https://<swa-name>.azureedge.net`
-- **Backend API:** `https://<app-service-name>.azurewebsites.net`
-- **Swagger:** `https://<app-service-name>.azurewebsites.net/swagger`
-
-### 🧹 Clean Up Resources
-To avoid ongoing costs:
-```bash
-cd terraform
-terraform destroy
-```
-Or delete the resource group in Azure Portal.
