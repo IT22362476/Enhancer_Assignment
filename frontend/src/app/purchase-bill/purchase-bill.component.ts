@@ -103,6 +103,8 @@ export class PurchaseBillComponent implements OnInit {
   selectItem(item: string): void {
     this.form.item = item;
     this.showAutocomplete = false;
+    this.formTouched['item'] = true;
+    this.validate();
     this.calculate();
   }
 

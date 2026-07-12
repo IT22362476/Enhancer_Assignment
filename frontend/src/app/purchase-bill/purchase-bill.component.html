@@ -35,7 +35,7 @@
               [(ngModel)]="form.item"
               (input)="filterItems(); markTouched('item')"
               (focus)="filterItems()"
-              (blur)="onBlur(); markTouched('item')"
+              (blur)="onBlur()"
               placeholder="Search item..."
               class="form-control has-icon"
               autocomplete="off"
